@@ -49,9 +49,9 @@ class MicBotSkill(MycroftSkill):
         my_setting = self.settings.get('my_setting')
 
         start_server = websockets.serve(self.hello, "0.0.0.0", 8765)
-
-        asyncio.get_event_loop().run_until_complete(start_server)
-        asyncio.get_event_loop().run_forever()
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(start_server)
+        loop.run_forever()
 
     @intent_handler(IntentBuilder('ThankYouIntent').require('ThankYouKeyword'))
     def handle_thank_you_intent(self, message):
