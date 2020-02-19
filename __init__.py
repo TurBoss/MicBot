@@ -48,8 +48,9 @@ class MicBotSkill(MycroftSkill):
         settings will be available."""
         my_setting = self.settings.get('my_setting')
 
-        start_server = websockets.serve(self.hello, "0.0.0.0", 8765)
         loop = asyncio.new_event_loop()
+
+        start_server = websockets.serve(self.hello, "0.0.0.0", 8765, loop=loop)
         loop.run_until_complete(start_server)
         loop.run_forever()
 
