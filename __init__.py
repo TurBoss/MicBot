@@ -16,11 +16,15 @@
 # along with Mycroft Core.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-
+import json
+import logging
 import websockets
 
 from adapt.intent import IntentBuilder
 from mycroft import MycroftSkill, intent_handler
+
+
+logging.basicConfig()
 
 
 class MicBotSkill(MycroftSkill):
@@ -30,16 +34,53 @@ class MicBotSkill(MycroftSkill):
         it cannot utilise MycroftSkill methods as the class does not yet exist.
         """
         super(MicBotSkill, self).__init__()
+
+        self.users = set()
+        self.state = {"value": 0}
+
         self.learning = True
 
-    async def hello(self, websocket, path):
-        name = await websocket.recv()
-        print(f"< {name}")
+    def state_event(self):
+        return json.dumps({"type": "state", **self.state})
 
-        greeting = f"Hello {name}!"
+    def users_event(self):
+        return json.dumps({"type": "users", "count": len(self.users)})
 
-        await websocket.send(greeting)
-        print(f"> {greeting}")
+    async def notify_state(self):
+        if self.users:  # asyncio.wait doesn't accept an empty list
+            message = self.state_event()
+            await asyncio.wait([user.send(message) for user in self.users])
+
+    async def notify_users(self):
+        if self.users:  # asyncio.wait doesn't accept an empty list
+            message = self.users_event()
+            await asyncio.wait([user.send(message) for user in self.users])
+
+    async def register(self, websocket):
+        self.users.add(websocket)
+        await self.notify_users()
+
+    async def unregister(self, websocket):
+        self.users.remove(websocket)
+        await self.notify_users()
+
+    async def counter(self, websocket, path):
+        # register(websocket) sends user_event() to websocket
+        await self.register(websocket)
+        try:
+            await websocket.send(self.state_event())
+            async for message in websocket:
+                data = json.loads(message)
+                if data["action"] == "minus":
+                    self.state["value"] -= 1
+                    await self.notify_state()
+                elif data["action"] == "plus":
+                    self.state["value"] += 1
+                    await self.notify_state()
+                else:
+                    logging.error("unsupported event: {}", data)
+        finally:
+            await self.unregister(websocket)
 
     def initialize(self):
         """ Perform any final setup needed for the skill here.
@@ -50,7 +91,7 @@ class MicBotSkill(MycroftSkill):
 
         loop = asyncio.new_event_loop()
 
-        start_server = websockets.serve(self.hello, "0.0.0.0", 8765, loop=loop)
+        start_server = websockets.serve(self.counter, "0.0.0.0", 8765, loop=loop)
         loop.run_until_complete(start_server)
         loop.run_forever()
 
