@@ -16,7 +16,6 @@
 # along with Mycroft Core.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-
 import websockets
 
 from adapt.intent import IntentBuilder
@@ -38,7 +37,6 @@ class MicBotSkill(MycroftSkill):
         async with websockets.connect(uri) as websocket:
             await websocket.send(name)
             print(f"> {name}")
-
             greeting = await websocket.recv()
             print(f"< {greeting}")
 
@@ -52,7 +50,7 @@ class MicBotSkill(MycroftSkill):
     @intent_handler(IntentBuilder('ThankYouIntent').require('ThankYouKeyword'))
     def handle_thank_you_intent(self, message):
         """ This is an Adapt intent handler, it is triggered by a keyword."""
-        # self.loop.run_until_complete(self.run_action("play_anim"))
+        self.loop.run_until_complete(self.run_action("play_anim"))
         self.speak_dialog("welcome")
 
     @intent_handler('HowAreYou.intent')
