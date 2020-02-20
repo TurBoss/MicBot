@@ -29,7 +29,7 @@ class MicBotSkill(MycroftSkill):
         it cannot utilise MycroftSkill methods as the class does not yet exist.
         """
         super(MicBotSkill, self).__init__()
-        self.loop = asyncio.new_event_loop()
+        self.loop = asyncio.get_event_loop()
         self.learning = True
 
     async def run_action(self, name):
