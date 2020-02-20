@@ -30,6 +30,7 @@ class MicBotSkill(MycroftSkill):
         it cannot utilise MycroftSkill methods as the class does not yet exist.
         """
         super(MicBotSkill, self).__init__()
+        self.loop = asyncio.new_event_loop()
         self.learning = True
 
     async def run_action(self, name):
@@ -48,14 +49,11 @@ class MicBotSkill(MycroftSkill):
         settings will be available."""
         my_setting = self.settings.get('my_setting')
 
-        self.loop = asyncio.new_event_loop()
-
-
     @intent_handler(IntentBuilder('ThankYouIntent').require('ThankYouKeyword'))
     def handle_thank_you_intent(self, message):
         """ This is an Adapt intent handler, it is triggered by a keyword."""
-        self.speak_dialog("welcome")
         self.loop.run_until_complete(self.run_action("play_anim"))
+        self.speak_dialog("welcome")
 
     @intent_handler('HowAreYou.intent')
     def handle_how_are_you_intent(self, message):
