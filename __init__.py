@@ -32,14 +32,14 @@ class MicBotSkill(MycroftSkill):
         super(MicBotSkill, self).__init__()
         self.learning = True
 
-    async def hello(self, websocket, path):
-        name = await websocket.recv()
-        print(f"< {name}")
+    async def run_action(self, name):
+        uri = "ws://192.168.10.99:8765"
+        async with websockets.connect(uri) as websocket:
+            await websocket.send(name)
+            print(f"> {name}")
 
-        greeting = f"Hello {name}!"
-
-        await websocket.send(greeting)
-        print(f"> {greeting}")
+            greeting = await websocket.recv()
+            print(f"< {greeting}")
 
     def initialize(self):
         """ Perform any final setup needed for the skill here.
@@ -48,16 +48,14 @@ class MicBotSkill(MycroftSkill):
         settings will be available."""
         my_setting = self.settings.get('my_setting')
 
-        loop = asyncio.new_event_loop()
+        self.loop = asyncio.new_event_loop()
 
-        start_server = websockets.serve(self.hello, "0.0.0.0", 8765, loop=loop)
-        loop.run_until_complete(start_server)
-        loop.run_forever()
 
     @intent_handler(IntentBuilder('ThankYouIntent').require('ThankYouKeyword'))
     def handle_thank_you_intent(self, message):
         """ This is an Adapt intent handler, it is triggered by a keyword."""
         self.speak_dialog("welcome")
+        self.loop.run_until_complete(self.run_action("play_anim"))
 
     @intent_handler('HowAreYou.intent')
     def handle_how_are_you_intent(self, message):
